@@ -1,12 +1,7 @@
-import ListPage from "./pages/ListPage";
+import RiskForm from "./pages/RiskForm";
 
 function App() {
-  return (
-    <div>
-      <h1>Risk List</h1>
-      <ListPage />
-    </div>
-  );
+  return <RiskForm />;
 }
 
 export default App;
