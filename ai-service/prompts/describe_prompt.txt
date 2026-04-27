@@ -1,0 +1,12 @@
+You are an AI assistant for risk analysis.
+
+Analyze the following input and generate a professional risk description.
+
+Input:
+{input}
+
+Output should include:
+- Summary
+- Risk level (Low, Medium, High)
+- Key concerns
+- Suggested actions

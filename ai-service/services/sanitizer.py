@@ -1,71 +1,24 @@
 import re
 from flask import request, jsonify
 
-# Regex to remove HTML tags
-HTML_TAG_PATTERN = re.compile(r"<.*?>")
-
-# Prompt injection patterns
-INJECTION_PATTERNS = [
-    r"ignore previous instructions",
-    r"system prompt",
-    r"you are chatgpt",
-    r"act as",
-    r"pretend to",
-    r"bypass",
-    r"jailbreak",
-    r"developer mode",
-    r"override",
-    r"reset instructions"
-]
-
-
-def sanitize_input(value: str) -> str:
-    """Remove HTML tags and trim spaces"""
-    if not isinstance(value, str):
-        return value
-
-    value = re.sub(HTML_TAG_PATTERN, "", value)
-    return value.strip()
-
-
-def detect_injection(value: str) -> bool:
-    """Detect prompt injection attempts"""
-    value = value.lower()
-
-    for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, value):
-            return True
-    return False
-
 
 def validate_request():
-    """Global request validation middleware"""
+    if request.method == "POST":
+        data = request.get_json()
 
-    if request.method in ["POST", "PUT"]:
-        data = request.get_json(silent=True)
+        #  Empty input check
+        if not data:
+            return jsonify({"error": "Empty input"}), 400
 
-        if data is None:
-            return jsonify({
-                "error": "Invalid or missing JSON body"
-            }), 400
+        text = str(data).lower()
 
-        sanitized_data = {}
+        #  SQL Injection detection
+        sql_patterns = ["drop", "select", "insert", "delete", "--", ";"]
+        if any(pattern in text for pattern in sql_patterns):
+            return jsonify({"error": "SQL Injection detected"}), 400
 
-        for key, value in data.items():
+        # Prompt Injection detection
+        if "ignore previous instructions" in text:
+            return jsonify({"error": "Prompt Injection detected"}), 400
 
-            if isinstance(value, str):
-
-                # Detect prompt injection
-                if detect_injection(value):
-                    return jsonify({
-                        "error": f"Prompt injection detected in field '{key}'"
-                    }), 400
-
-                # Sanitize input
-                sanitized_data[key] = sanitize_input(value)
-
-            else:
-                sanitized_data[key] = value
-
-        # Replace request JSON safely
-        request._cached_json = sanitized_data
+    return None
