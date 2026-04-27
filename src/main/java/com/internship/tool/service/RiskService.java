@@ -4,18 +4,37 @@ import com.internship.tool.dto.*;
 import com.internship.tool.entity.EmergingRisk;
 import com.internship.tool.exception.ResourceNotFoundException;
 import com.internship.tool.repository.EmergingRiskRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class RiskService {
 
     @Autowired
     private EmergingRiskRepository repository;
+
+    // ✅ FIXED: method inside class
+    public Map<String, Object> getStats() {
+
+        Map<String, Object> stats = new HashMap<>();
+
+        long total = repository.countByIsDeletedFalse();
+        long open = repository.countByStatusAndIsDeletedFalse("OPEN");
+        long high = repository.countBySeverityAndIsDeletedFalse("HIGH");
+
+        stats.put("total", total);
+        stats.put("open", open);
+        stats.put("high", high);
+
+        return stats;
+    }
 
     public Page<RiskResponseDTO> getAll(int page, int size) {
         return repository.findByIsDeletedFalse(PageRequest.of(page, size))
