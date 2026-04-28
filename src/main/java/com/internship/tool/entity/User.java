@@ -2,7 +2,6 @@ package com.internship.tool.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -16,20 +15,12 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String username;
+    private String name;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
-    @Builder.Default
-    private String role = "VIEWER";
-
-    @Builder.Default
-    private Boolean isActive = true;
-
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private String role; // ✅ THIS IS ENOUGH
 }
