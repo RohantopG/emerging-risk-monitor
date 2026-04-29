@@ -1,9 +1,9 @@
-CREATE TABLE IF NOT EXISTS emerging_risk (
-    id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    severity VARCHAR(50) DEFAULT 'MEDIUM',
-    status VARCHAR(50) DEFAULT 'OPEN',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted BOOLEAN DEFAULT FALSE
+CREATE TABLE risks (
+                       id SERIAL PRIMARY KEY,
+                       title VARCHAR(255),
+                       description TEXT,
+                       status VARCHAR(50),
+                       score INT,
+                       created_at TIMESTAMP,
+                       updated_at TIMESTAMP
 );
