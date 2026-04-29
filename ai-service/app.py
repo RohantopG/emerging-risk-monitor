@@ -1,54 +1,49 @@
 from flask import Flask, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+from services.sanitizer import validate_request
+
+# Import routes
 from routes.describe import describe_bp
-from routes.recommend import recommend_bp
 from routes.generate_report import generate_report_bp
-import logging
+
 
 app = Flask(__name__)
 
-# Logging setup
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - [AI-SERVICE] %(message)s"
+#GLOBAL RATE LIMITER 
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["30 per minute"]
 )
+limiter.init_app(app)
 
-# Register blueprints
+
+# ✅ REGISTER SANITIZATION (Day 3 + Day 5)
+@app.before_request
+def before_request():
+    response = validate_request()
+    if response:
+        return response
+
+
 app.register_blueprint(describe_bp)
-app.register_blueprint(recommend_bp)
 app.register_blueprint(generate_report_bp)
 
-# Health check
+
 @app.route("/health", methods=["GET"])
 def health():
+    return {"status": "ok"}, 200
+
+
+#HANDLE RATE LIMIT ERROR
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
     return jsonify({
-        "status": "ok",
-        "service": "ai-service"
-    }), 200
-
-
-# Root route
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "message": "AI Service is running",
-        "endpoints": [
-            "/health",
-            "/describe",
-            "/recommend",
-            "/generate-report"
-        ]
-    }), 200
-
-
-# Global error handler
-@app.errorhandler(Exception)
-def handle_exception(e):
-    logging.error(f"Unhandled error: {str(e)}")
-    return jsonify({
-        "status": "error",
-        "message": "Internal server error"
-    }), 500
+        "error": "Too many requests",
+        "retry_after": str(e.description)
+    }), 429
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
