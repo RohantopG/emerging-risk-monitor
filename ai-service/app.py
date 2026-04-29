@@ -1,48 +1,74 @@
-from flask import Flask, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask import Flask, jsonify, request
 
-from services.sanitizer import validate_request
-
-# Import routes
-from routes.describe import describe_bp
-from routes.generate_report import generate_report_bp
-
+from services.categoriser import categorise_text
+from services.chroma_store import init_collection
+from services.groq_client import GROQ_MODEL_NAME
+from services.query_service import answer_query
+from services.query_service import get_query_cache_stats
+from services.runtime_metrics import get_runtime_stats
 
 app = Flask(__name__)
 
-#GLOBAL RATE LIMITER 
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["30 per minute"]
-)
-limiter.init_app(app)
+
+@app.post("/categorise")
+def categorise():
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text")
+
+    if not isinstance(text, str) or not text.strip():
+        return jsonify({"error": "Request JSON must include a non-empty 'text' field."}), 400
+
+    result = categorise_text(text=text.strip())
+    return jsonify(
+        {
+            "category": result["category"],
+            "confidence": result["confidence"],
+            "reasoning": result["reasoning"],
+        }
+    )
 
 
-# ✅ REGISTER SANITIZATION (Day 3 + Day 5)
-@app.before_request
-def before_request():
-    response = validate_request()
-    if response:
-        return response
+@app.post("/query")
+def query():
+    payload = request.get_json(silent=True) or {}
+    question = payload.get("question")
+
+    if not isinstance(question, str) or not question.strip():
+        return jsonify({"error": "Request JSON must include a non-empty 'question' field."}), 400
+
+    result = answer_query(question=question.strip(), top_k=3)
+    return jsonify(
+        {
+            "answer": result["answer"],
+            "sources": result["sources"],
+        }
+    )
 
 
-app.register_blueprint(describe_bp)
-app.register_blueprint(generate_report_bp)
-
-
-@app.route("/health", methods=["GET"])
+@app.get("/health")
 def health():
-    return {"status": "ok"}, 200
+    runtime = get_runtime_stats()
+    cache_stats = get_query_cache_stats()
 
+    doc_count = 0
+    try:
+        doc_count = int(init_collection().count())
+    except Exception:
+        doc_count = 0
 
-#HANDLE RATE LIMIT ERROR
-@app.errorhandler(429)
-def rate_limit_exceeded(e):
-    return jsonify({
-        "error": "Too many requests",
-        "retry_after": str(e.description)
-    }), 429
+    return jsonify(
+        {
+            "status": "ok",
+            "model_name": GROQ_MODEL_NAME,
+            "avg_groq_latency_ms_last_10": runtime["avg_response_time_ms_last_10"],
+            "chroma_doc_count": doc_count,
+            "uptime": {
+                "seconds": runtime["uptime_seconds"],
+                "human": runtime["uptime_human"],
+            },
+            "cache_stats": cache_stats,
+        }
+    )
 
 
 if __name__ == "__main__":
