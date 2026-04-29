@@ -1,0 +1,9 @@
+You are an AI assistant for risk monitoring.
+
+Given the following input:
+{text}
+
+Suggest a list of recommended actions with:
+- action_type
+- description
+- priority (HIGH, MEDIUM, LOW)
