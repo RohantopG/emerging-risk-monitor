@@ -1,20 +1,27 @@
+server:
+  port: 8080
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/riskdb
     username: postgres
-    password: 1234
-    driver-class-name: org.postgresql.Driver
+    password: postgres
 
   jpa:
     hibernate:
-      ddl-auto: update   # ✅ correct now
+      ddl-auto: update
     show-sql: true
+    open-in-view: false   # optional but recommended
 
   flyway:
-    enabled: false
+    enabled: true         # ensure migrations run properly
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
+
+jwt:
+  secret: mysupersecretkeymysupersecretkey12345
+  expiration: 86400000

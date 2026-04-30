@@ -1,6 +1,9 @@
 package com.internship.tool.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -22,6 +25,7 @@ public class RiskResponseDTO {
     private String ownerEmail;
     private String aiDescription;
     private String aiCategory;
+    private String createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

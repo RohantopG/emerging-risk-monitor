@@ -1,49 +1,82 @@
 package com.internship.tool.service;
 
-import com.internship.tool.dto.RegisterRequestDTO;
+import com.internship.tool.config.JwtUtil;
+import com.internship.tool.dto.*;
 import com.internship.tool.entity.User;
 import com.internship.tool.repository.UserRepository;
-import com.internship.tool.config.JwtUtil;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
+    @Autowired
+    private UserRepository userRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    public String register(RegisterRequestDTO request) {
+    @Autowired
+    private JwtUtil jwtUtil;
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return "User already exists";
+    // REGISTER
+    public AuthResponseDTO register(RegisterRequestDTO request) {
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
         }
 
         User user = User.builder()
-                .name(request.getName())
+                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role("USER")
+                .role("VIEWER")
+                .isActive(true)
                 .build();
 
         userRepository.save(user);
 
-        return "User registered successfully";
+        return AuthResponseDTO.builder()
+                .username(user.getUsername())
+                .role(user.getRole())
+                .message("User registered successfully")
+                .build();
     }
 
-    public String login(String email, String password) {
+    // LOGIN
+    public AuthResponseDTO login(LoginRequestDTO request) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository
+                .findByUsername(request.getUsername())
+                .orElseThrow(() ->
+                        new RuntimeException("Invalid username or password"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+        if (!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword())) {
+
+            throw new RuntimeException("Invalid username or password");
         }
 
-        return jwtUtil.generateToken(user.getEmail(), user.getRole());
+        if (!user.getIsActive()) {
+            throw new RuntimeException("Account is disabled");
+        }
+
+        String token = jwtUtil.generateToken(
+                user.getUsername(),
+                user.getRole()
+        );
+
+        return AuthResponseDTO.builder()
+                .token(token)
+                .username(user.getUsername())
+                .role(user.getRole())
+                .message("Login successful")
+                .build();
     }
 }
