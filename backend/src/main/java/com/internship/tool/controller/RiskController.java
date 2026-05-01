@@ -38,4 +38,19 @@ public class RiskController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @GetMapping("/search")
+    public List<Risk> search(@RequestParam String keyword) {
+        return service.search(keyword);
+    }
+
+    @GetMapping("/filter")
+    public List<Risk> filter(@RequestParam String status) {
+        return service.filterByStatus(status);
+    }
+
+    @GetMapping("/paged")
+    public Object paged(@RequestParam int page, @RequestParam int size) {
+        return service.getPaged(page, size);
+    }
 }

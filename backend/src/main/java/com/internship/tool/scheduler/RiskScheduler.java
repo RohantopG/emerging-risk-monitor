@@ -1,5 +1,5 @@
 package com.internship.tool.scheduler;
-
+import com.internship.tool.service.RiskService;
 import com.internship.tool.service.RiskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

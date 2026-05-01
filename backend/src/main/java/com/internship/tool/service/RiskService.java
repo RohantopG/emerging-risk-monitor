@@ -4,6 +4,8 @@ import com.internship.tool.entity.Risk;
 import com.internship.tool.repository.RiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
@@ -12,52 +14,50 @@ import java.util.List;
 public class RiskService {
 
     private final RiskRepository riskRepository;
-    private final EmailService emailService;
     private final AiServiceClient aiServiceClient;
 
-    // CREATE
     public Risk create(Risk risk) {
         Risk saved = riskRepository.save(risk);
-
-        try {
-            emailService.sendRiskCreatedEmail("user@gmail.com", saved.getTitle());
-        } catch (Exception e) {
-            System.out.println("Email failed");
-        }
-
         processAI(saved.getId(), saved.getTitle());
-
         return saved;
     }
 
-    // GET ALL
     public List<Risk> getAll() {
         return riskRepository.findAll();
     }
 
-    // GET BY ID
     public Risk getById(Long id) {
         return riskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Risk not found"));
     }
 
-    // UPDATE
     public Risk update(Long id, Risk updated) {
         Risk risk = getById(id);
-
         risk.setTitle(updated.getTitle());
         risk.setDescription(updated.getDescription());
         risk.setStatus(updated.getStatus());
-
         return riskRepository.save(risk);
     }
 
-    // DELETE
     public void delete(Long id) {
         riskRepository.deleteById(id);
     }
 
-    // ---------------- AI ----------------
+    public List<Risk> search(String keyword) {
+        return riskRepository.findByTitleContainingIgnoreCase(keyword);
+    }
+
+    public List<Risk> filterByStatus(String status) {
+        return riskRepository.findByStatus(status);
+    }
+
+    public Page<Risk> getPaged(int page, int size) {
+        return riskRepository.findAll(PageRequest.of(page, size));
+    }
+
+    public void handleOverdueRisks() {
+        System.out.println("Scheduler running...");
+    }
 
     public void processAI(Long id, String title) {
         try {
@@ -68,23 +68,5 @@ public class RiskService {
         } catch (Exception e) {
             System.out.println("AI failed");
         }
-    }
-
-    // ---------------- OPTIONAL METHODS (fix errors) ----------------
-
-    public List<Risk> getAllPaged(int page, int size) {
-        return riskRepository.findAll(); // simple fix
-    }
-
-    public List<Risk> getByCategory(String category) {
-        return riskRepository.findAll(); // placeholder
-    }
-
-    public List<Risk> getBySeverity(String severity) {
-        return riskRepository.findAll(); // placeholder
-    }
-
-    public void handleOverdueRisks() {
-        System.out.println("Scheduler running...");
     }
 }
