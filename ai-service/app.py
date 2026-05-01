@@ -1,75 +1,71 @@
 from flask import Flask, jsonify, request
-
-from services.categoriser import categorise_text
-from services.chroma_store import init_collection
-from services.groq_client import GROQ_MODEL_NAME
-from services.query_service import answer_query
-from services.query_service import get_query_cache_stats
-from services.runtime_metrics import get_runtime_stats
+from datetime import datetime
 
 app = Flask(__name__)
 
+# -------------------------
+# Health API
+# -------------------------
+start_time = datetime.utcnow()
 
-@app.post("/categorise")
-def categorise():
-    payload = request.get_json(silent=True) or {}
-    text = payload.get("text")
+def get_uptime():
+    return str(int((datetime.utcnow() - start_time).total_seconds())) + " seconds"
 
-    if not isinstance(text, str) or not text.strip():
-        return jsonify({"error": "Request JSON must include a non-empty 'text' field."}), 400
-
-    result = categorise_text(text=text.strip())
-    return jsonify(
-        {
-            "category": result["category"],
-            "confidence": result["confidence"],
-            "reasoning": result["reasoning"],
-        }
-    )
-
-
-@app.post("/query")
-def query():
-    payload = request.get_json(silent=True) or {}
-    question = payload.get("question")
-
-    if not isinstance(question, str) or not question.strip():
-        return jsonify({"error": "Request JSON must include a non-empty 'question' field."}), 400
-
-    result = answer_query(question=question.strip(), top_k=3)
-    return jsonify(
-        {
-            "answer": result["answer"],
-            "sources": result["sources"],
-        }
-    )
-
-
-@app.get("/health")
+@app.route('/health', methods=['GET'])
 def health():
-    runtime = get_runtime_stats()
-    cache_stats = get_query_cache_stats()
+    return jsonify({
+        "status": "running",
+        "model": "llama3",
+        "uptime": get_uptime()
+    })
 
-    doc_count = 0
+
+# -------------------------
+# Describe API (ADD HERE)
+# -------------------------
+@app.route('/describe', methods=['POST'])
+def describe():
     try:
-        doc_count = int(init_collection().count())
-    except Exception:
-        doc_count = 0
+        # Handle JSON input
+        if request.is_json:
+            data = request.get_json()
+            text = data.get("text", "")
+        else:
+            text = request.get_data(as_text=True)
 
-    return jsonify(
-        {
-            "status": "ok",
-            "model_name": GROQ_MODEL_NAME,
-            "avg_groq_latency_ms_last_10": runtime["avg_response_time_ms_last_10"],
-            "chroma_doc_count": doc_count,
-            "uptime": {
-                "seconds": runtime["uptime_seconds"],
-                "human": runtime["uptime_human"],
-            },
-            "cache_stats": cache_stats,
-        }
-    )
+        if not text:
+            return jsonify({"error": "No input provided"}), 400
+
+        response = f"AI Analysis for: {text}"
+
+        return jsonify({
+            "result": response
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+# -------------------------
+# Security headers (Day 8)
+# -------------------------
+@app.route('/')
+def home():
+    return "AI Service is running"
+
+@app.route('/describe', methods=['POST'])
+
+@app.after_request
+def add_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+
+# -------------------------
+# Run server
+# -------------------------
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
