@@ -1,22 +1,17 @@
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid
 } from "recharts";
 
 function Dashboard() {
-  // Dummy stats (simulate API /stats)
-  const stats = {
-    total: 10,
-    high: 4,
-    medium: 3,
-    low: 3
-  };
+ const stored = JSON.parse(localStorage.getItem("risks")) || [];
 
-  // Chart data
+const stats = {
+  total: stored.length,
+  high: stored.filter(r => r.riskLevel === "High").length,
+  medium: stored.filter(r => r.riskLevel === "Medium").length,
+  low: stored.filter(r => r.riskLevel === "Low").length
+};
+
   const chartData = [
     { name: "High", value: stats.high },
     { name: "Medium", value: stats.medium },
@@ -24,42 +19,35 @@ function Dashboard() {
   ];
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div>
       <h2>Dashboard</h2>
 
-      {/* KPI Cards */}
-      <div style={{ display: "flex", gap: "20px" }}>
-        <div style={{ border: "1px solid", padding: "10px" }}>
-          <h4>Total Risks</h4>
-          <p>{stats.total}</p>
-        </div>
-
-        <div style={{ border: "1px solid", padding: "10px" }}>
-          <h4>High</h4>
-          <p>{stats.high}</p>
-        </div>
-
-        <div style={{ border: "1px solid", padding: "10px" }}>
-          <h4>Medium</h4>
-          <p>{stats.medium}</p>
-        </div>
-
-        <div style={{ border: "1px solid", padding: "10px" }}>
-          <h4>Low</h4>
-          <p>{stats.low}</p>
-        </div>
+      {/* CARDS */}
+      <div style={{ display: "flex", gap: "15px", flexWrap: "wrap",justifyContent: "center" }}>
+        {["total", "high", "medium", "low"].map((key) => (
+          <div key={key} style={{
+            flex: "1 1 200px",
+            border: "1px solid #ddd",
+            padding: "15px",
+            borderRadius: "8px"
+            
+          }}>
+            <h4>{key.toUpperCase()}</h4>
+            <p>{stats[key]}</p>
+          </div>
+        ))}
       </div>
 
-      <br />
-
-      {/* Bar Chart */}
-      <BarChart width={400} height={300} data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Bar dataKey="value" />
-      </BarChart>
+      {/* CHART */}
+      <div style={{ marginTop: "20px", overflowX: "auto" }}>
+        <BarChart width={400} height={300} data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="value" fill="#1B4F8A" />
+        </BarChart>
+      </div>
     </div>
   );
 }
