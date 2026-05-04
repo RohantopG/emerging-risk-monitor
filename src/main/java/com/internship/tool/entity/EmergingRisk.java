@@ -2,12 +2,16 @@ package com.internship.tool.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "emerging_risk")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,8 +27,8 @@ public class EmergingRisk {
     private String category;
     private String severity;
     private String status;
-
     private Integer riskScore;
+
     private LocalDate identifiedDate;
     private LocalDate dueDate;
 
@@ -34,8 +38,15 @@ public class EmergingRisk {
     private String aiDescription;
     private String aiCategory;
 
+    private String createdBy;
+    private String updatedBy;
+
+    @CreatedDate
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    private Boolean isDeleted;
+    @Builder.Default
+    private Boolean isDeleted = false;
 }
