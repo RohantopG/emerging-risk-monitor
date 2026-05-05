@@ -1,7 +1,10 @@
 from flask import Flask, jsonify, request
 from datetime import datetime
+from talisman import Talisman
 
 app = Flask(__name__)
+Talisman(app, content_security_policy={"default-src": "'self'"}, force_https=False)
+
 
 # -------------------------
 # Health API
@@ -44,8 +47,12 @@ def describe():
 
     except Exception as e:
         return jsonify({
-            "error": str(e)
+            "error": "An internal server error occurred."
         }), 500
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "An internal server error occurred."}), 500
 
 
 # -------------------------

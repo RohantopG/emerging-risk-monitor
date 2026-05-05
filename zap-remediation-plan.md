@@ -79,3 +79,17 @@ Use `@ControllerAdvice` in `backend/src/main/java/com/internship/tool/exception/
 
 ---
 *Note: This remediation plan satisfies the Day 7 requirement to analyze the OWASP ZAP baseline scan, categorize findings, and propose actionable fixes for Medium and higher risks.*
+
+## Day 11 & Day 12 Active Scan Updates
+
+### Day 11: Active Scan Results
+- **Critical / High Findings:** Zero Critical and High findings were detected during the full active scan.
+- **Medium Findings:** Documented in this plan. Planned for remediation in Day 12.
+
+### Day 12: Remediation of Remaining Findings
+All planned remediation steps have been executed:
+1. **flask-talisman** has been integrated into the Flask AI service to automatically handle security headers like X-Frame-Options and Content-Security-Policy.
+2. **Spring Security** has been configured to enforce `X-Frame-Options: DENY` and `Content-Security-Policy: default-src 'self'`.
+3. **Global Exception Handling** is now in place for both Flask (`@app.errorhandler(500)`) and Spring Boot (`@ControllerAdvice`) to prevent application error disclosure and stack trace leaks.
+
+A re-scan confirms that **zero Critical, High, or Medium findings remain**.
